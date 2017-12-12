@@ -8,6 +8,12 @@
   Author URI: http://nexusthemes.com
 */
 
+// hint for ourselves how to deploy new release;
+// step 1) increase the version number
+// step 2) zip
+// step 3) remove .git folder
+// step 4) deploy zip in /partners/nexus/9/www/wp-update-server/packages
+
 if ($_REQUEST["nxspartnerlogintoken"] != "")
 {
 	return;
@@ -24,11 +30,27 @@ function wp_webdesign_catalog_bypassall($result)
 	return true;
 }
 
+// ----
+
+$plugin_path = plugin_dir_path( __FILE__ );
+// Include updater logic
+require_once( $this->plugin_path . '/thirdparty/plugin-update-checker/plugin-update-checker.php');
+$MyUpdateChecker = PucFactory::buildUpdateChecker
+(
+	'http://wpupdates.nexus.c1.us-e1.nexusthemes.com/wp-update-server/?action=get_metadata&slug=wp-webdesign-catalog', //Metadata URL.
+	__FILE__, //Full path to the main plugin file.
+	//Plugin slug. Usually it's the same as the name of the directory.
+	'wp-webdesign-catalog'
+);
+
+// -----
+
 require_once("wp-webdesign-catalog-functions.php");;
 require_once("wp-webdesign-catalog-modelmanager.php");
 require_once("wp-webdesign-catalog-widgets.php");
 require_once("wp-webdesign-catalog-shortcodes.php");
 // require_once("wp-webdesign-catalog-customizer.php");
+require_once("wp-webdesign-catalog-updater.php");
 
 function wp_webdesign_catalog_getbusinessrules()
 {
@@ -230,10 +252,6 @@ function wdc_admin_init()
 	}
 }
 add_action("admin_init", "wdc_admin_init");
-
-
-
-
 
 function wdc_my_plugin_menu() 
 {
