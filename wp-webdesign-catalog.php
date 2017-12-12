@@ -34,7 +34,7 @@ function wp_webdesign_catalog_bypassall($result)
 
 $plugin_path = plugin_dir_path( __FILE__ );
 // Include updater logic
-require_once( $this->plugin_path . '/thirdparty/plugin-update-checker/plugin-update-checker.php');
+require_once($plugin_path . '/thirdparty/plugin-update-checker/plugin-update-checker.php');
 $MyUpdateChecker = PucFactory::buildUpdateChecker
 (
 	'http://wpupdates.nexus.c1.us-e1.nexusthemes.com/wp-update-server/?action=get_metadata&slug=wp-webdesign-catalog', //Metadata URL.
@@ -50,7 +50,6 @@ require_once("wp-webdesign-catalog-modelmanager.php");
 require_once("wp-webdesign-catalog-widgets.php");
 require_once("wp-webdesign-catalog-shortcodes.php");
 // require_once("wp-webdesign-catalog-customizer.php");
-require_once("wp-webdesign-catalog-updater.php");
 
 function wp_webdesign_catalog_getbusinessrules()
 {
@@ -216,6 +215,7 @@ function wdc_footer()
 	<?php
 }
 add_action("wp_footer", "wdc_footer");
+add_action("admin_footer", "wdc_footer");
 
 function wdc_init()
 {
@@ -297,75 +297,112 @@ function wdc_plugin_options()
 	}
 	else
 	{
-		$next_url = wdc_get_home_url();
-		$next_url .= "wdc-after-theme-selected/";
+		$next_url = wdc_geturlcurrentpage();
+		$next_url = wdc_addqueryparametertourl_v2($next_url, "wdc-after-theme-selected", "true");
 		
-		// 
+		function page_tabs( $current = 'first' ) 
+		{
+	    $tabs = array(
+	        'first'   => __( 'Specific Design', 'plugin-textdomain' ), 
+	        'second'  => __( 'Designs by businesstype', 'plugin-textdomain' )
+	    );
+	    $html = '<h2 class="nav-tab-wrapper">';
+	    foreach( $tabs as $tab => $name )
+	    {
+        $class = ( $tab == $current ) ? 'nav-tab-active' : '';
+        $page = $_REQUEST["page"];
+        $html .= '<a class="nav-tab ' . $class . '" href="?page='. $page . '&tab=' . $tab . '">' . $name . '</a>';
+	    }
+	    $html .= '</h2>';
+	    echo $html;
+		}
+		
+		$tab = ( ! empty( $_GET['tab'] ) ) ? esc_attr( $_GET['tab'] ) : 'first';
 		
 		?>
 		<h1>Webdesign catalog</h1>
-		
-		<p>
-			<h2>Usage</h2>
-			Use the following shortcode to render the catalog of a particular businesstype:<br />
-			<br />
-		  <textarea style="min-width: 50vw; min-height: 150px;" class="js-copytextarea1">
-		  	
-[wdc_items id="631" next_text="Next" next_url="<?php echo $next_url; ?>" back_text="Back" template="default.inlist"]	
-		  </textarea> 
-		  <br />
-		  <button class="js-textareacopybtn1" style="vertical-align:top;">Copy To Clipboard</button><br />
-		  <br />
-		  <script>
-		  	//
-		  	var copyTextareaBtn = document.querySelector('.js-textareacopybtn1');
-				copyTextareaBtn1.addEventListener('click', function(event) {
-				  var copyTextarea = document.querySelector('.js-copytextarea1');
-				  copyTextarea.select();
-				  try {
-				    var successful = document.execCommand('copy');
-				    var msg = successful ? 'successful' : 'unsuccessful';
-				    console.log('Copying text command was ' + msg);
-				  } catch (err) {
-				    console.log('Oops, unable to copy');
-				  }
-				});
-				//
-		  </script>
-		  
-		  <!-- -->
-		  
-		  <br />
-		  <textarea style="min-width: 50vw; min-height: 150px;" class="js-copytextarea2">
-		  	
-[wdc type=theme template=thumb next_step='x' next_url='x' back_text='x']	
-		  </textarea> 
-		  <br />
-		  <button class="js-textareacopybtn2" style="vertical-align:top;">Copy To Clipboard</button><br />
-		  <br />
-		  <script>
-		  	//
-		  	var copyTextareaBtn = document.querySelector('.js-textareacopybtn2');
-				copyTextareaBtn2.addEventListener('click', function(event) {
-				  var copyTextarea = document.querySelector('.js-copytextarea2');
-				  copyTextarea.select();
-				  try {
-				    var successful = document.execCommand('copy');
-				    var msg = successful ? 'successful' : 'unsuccessful';
-				    console.log('Copying text command was ' + msg);
-				  } catch (err) {
-				    console.log('Oops, unable to copy');
-				  }
-				});
-				//
-		  </script>
-		  
-		  
-		</p>
-		<p>
-			For a list of the valid ids, see <a target='_blank' href='https://nexusthemes.com/webdesigner-catalog/#businesstypeids'>here</a><br />
-		</p>
-		<?php
+		<?php page_tabs( $tab ); ?>
+		<?php if ( $tab == 'first' ) 
+		{
+			?>
+			<p>
+				At any place in your website you can render a specific design of a website (a list of the available ids can be found <a target='_blank' href='https://nexusthemes.com/webdesigner-catalog/#themeids'>here</a>), like so;<br />
+				<br />
+			  <?php echo do_shortcode("[wdc type=theme id=263 template=thumb-linked next_text='Next' next_url='{$next_url}' back_text='Back']"); ?>
+			  <br />
+				Use the following shortcode to render a single design:<br />
+				<br />
+			  
+			  <textarea style="min-width: 50vw; min-height: 150px;" class="js-copytextarea2">
+			  	
+	[wdc type=theme id=263 template=thumb-linked next_text='Next' next_url='<?php echo $next_url; ?>' back_text='Back']	
+			  </textarea> 
+			  <br />
+			  <br />
+			  <button class="js-textareacopybtn2" style="vertical-align:top;">Copy To Clipboard</button><br />
+			  <br />
+			  <script>
+			  	//
+			  	var copyTextareaBtn = document.querySelector('.js-textareacopybtn2');
+					copyTextareaBtn2.addEventListener('click', function(event) {
+					  var copyTextarea = document.querySelector('.js-copytextarea2');
+					  copyTextarea.select();
+					  try {
+					    var successful = document.execCommand('copy');
+					    var msg = successful ? 'successful' : 'unsuccessful';
+					    console.log('Copying text command was ' + msg);
+					  } catch (err) {
+					    console.log('Oops, unable to copy');
+					  }
+					});
+					//
+			  </script>  
+			</p>
+		<?php 
+		} else if ( $tab == 'second' ) 
+		{
+			?>
+			<p>
+				At any place in your site you can render a list of designs within a specific businesstype (for a list of the valid ids, see <a target='_blank' href='https://nexusthemes.com/webdesigner-catalog/#businesstypeids'>here</a>)<br />
+				<br />
+				<?php echo do_shortcode("[wdc_items id=631 next_text='Next' next_url='{$next_url}' back_text='Back' template='default.inlist']"); ?>
+				 <br />
+				Use the following shortcode to render:<br />
+				<br />
+			  <textarea style="min-width: 50vw; min-height: 150px;" class="js-copytextarea1">
+			  	
+	[wdc_items id="631" next_text="Next" next_url="<?php echo $next_url; ?>" back_text="Back" template="default.inlist"]	
+			  </textarea> 
+			  <br />
+			  <br />
+			  <button class="js-textareacopybtn1" style="vertical-align:top;">Copy To Clipboard</button><br />
+			  <br />
+			  <script>
+			  	//
+			  	var copyTextareaBtn = document.querySelector('.js-textareacopybtn1');
+					copyTextareaBtn1.addEventListener('click', function(event) {
+					  var copyTextarea = document.querySelector('.js-copytextarea1');
+					  copyTextarea.select();
+					  try {
+					    var successful = document.execCommand('copy');
+					    var msg = successful ? 'successful' : 'unsuccessful';
+					    console.log('Copying text command was ' + msg);
+					  } catch (err) {
+					    console.log('Oops, unable to copy');
+					  }
+					});
+					//
+			  </script>
+			  
+			  <!-- -->
+			  
+			  <br />
+				<hr />
+				<br />
+	
+			</p>
+			<?php
+		}
 	}
 	
 	echo "</div>";
