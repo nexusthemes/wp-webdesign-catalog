@@ -215,7 +215,7 @@ function wdc_footer()
 	<?php
 }
 add_action("wp_footer", "wdc_footer");
-add_action("admin_footer", "wdc_footer");
+add_action("admin_footer", "wdc_footer"); 
 
 function wdc_init()
 {
