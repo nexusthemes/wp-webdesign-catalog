@@ -3,7 +3,7 @@
   Plugin Name: wp-webdesign-catalog
   Plugin URI: http://nexusthemes.com
   Description: wp-webdesign-catalog
-  Version: 1.0.1
+  Version: 1.0.2
   Author: NexusThemes
   Author URI: http://nexusthemes.com
 */
@@ -219,8 +219,31 @@ add_action("admin_footer", "wdc_footer");
 
 function wdc_init()
 {
-	
-	
+	if ($_REQUEST["wdc_refetch"] == "true")
+	{
+		$isallowed = false;
+		if (is_super_admin())
+		{
+			$isallowed = true;
+		}
+		else if ($_SERVER['REMOTE_ADDR'] == "52.21.12.12")
+		{
+			$isallowed = true;
+		}
+		
+		if ($isallowed)
+		{
+			//
+			wdc_plugin_refetchall();
+			echo "Catalog refetched :)";
+			die();
+		}
+		else
+		{
+			echo "No permission; either login as a super admin, or invoke this from the appropriate server";
+			die();
+		}
+	}
 }
 add_action("init", "wdc_init");
 
@@ -271,6 +294,18 @@ function wdc_my_plugin_menu()
 }
 add_action( 'admin_menu', 'wdc_my_plugin_menu' );
 
+function wdc_plugin_refetchall()
+{
+	global $wdc_g_modelmanager;
+	$wdc_g_modelmanager->enableretrieval();
+	$wdc_g_modelmanager->cachebulkmodels("nxs.nexusthemes.itemmeta");
+	$wdc_g_modelmanager->cachebulkmodels("nxs.nexusthemes.itemmetaidsbybusinesstype");
+	$wdc_g_modelmanager->cachebulkmodels("nxs.business.businesstype");
+	$wdc_g_modelmanager->disableretrieval();
+}
+
+
+
 function wdc_plugin_options() 
 {
 	echo "<div class='wrap'>";
@@ -282,17 +317,10 @@ function wdc_plugin_options()
 	
 	if ($_REQUEST["wdc"] == "initialize")
 	{
-		// fetch data
-		global $wdc_g_modelmanager;
-		$wdc_g_modelmanager->enableretrieval();
-		$wdc_g_modelmanager->cachebulkmodels("nxs.nexusthemes.itemmeta");
-		$wdc_g_modelmanager->cachebulkmodels("nxs.nexusthemes.itemmetaidsbybusinesstype");
-		$wdc_g_modelmanager->cachebulkmodels("nxs.business.businesstype");
-		$wdc_g_modelmanager->disableretrieval();
+		wdc_plugin_refetchall();
 		
 		// 
 		$url = wdc_get_home_url() . "wp-admin/options-general.php?page=wdc-unique-identifier";
-		
 		echo "Finished loading :) Click <a href='$url'>here</a> to continue";
 	}
 	else
