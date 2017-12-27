@@ -115,6 +115,16 @@ function wdc_sc_item($attributes, $content = null, $name='')
 			<?php
 			$template_html = ob_get_clean();
 		}
+		else if ($template == "thumb-front")
+		{
+			ob_start();
+			?>
+			<a href="{{preview_url}}">
+			<img src="{{preview_image}}" />
+			</a>
+			<?php
+			$template_html = ob_get_clean();
+		}
 		else
 		{
 			$template_html = $template;
