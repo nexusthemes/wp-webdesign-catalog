@@ -456,7 +456,7 @@ function wdc_plugin_options()
 							<div alt="f319" class="dashicons dashicons-admin-site"></div>
 						</a>
 						&nbsp;
-						<a href='<?php echo $url; ?>' target='_blank'>
+						<a href='<?php echo $url; ?>'>
 							<?php echo $title; ?> - <?php echo $id; ?>
 						</a>
 					</div>
