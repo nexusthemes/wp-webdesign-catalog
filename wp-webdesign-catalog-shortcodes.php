@@ -31,15 +31,14 @@ function wdc_sc_item($attributes, $content = null, $name='')
 	}
 	if ($id == "")
 	{
-		$warnings[] = "shortcode error; specify an id attribute specified or add an itemmeta_id query parameter to the url or add an id query parameter to the url. Example would be id=514 (for list of values, see <a target='_blank' href='https://nexusthemes.com/webdesigner-catalog/#themeids'>here</a>)";
+		$warnings[] = "shortcode error; specify an id attribute specified or add an itemmeta_id query parameter to the url or add an id query parameter to the url. Example would be id=514 (for list of values, see the settings page in the WP backend))";
 	}
 	
 	if ($id != "")
 	{
-		
 		global $wdc_g_modelmanager;
 		$lookup = $wdc_g_modelmanager->getmodeltaxonomyproperties(array("modeluri" => "{$id}@nxs.nexusthemes.itemmeta"));
-
+		
 		$template = $attributes["template"];
 		$next_text = $attributes["next_text"];
 		$next_url = $attributes["next_url"];
@@ -79,7 +78,7 @@ function wdc_sc_item($attributes, $content = null, $name='')
 		{
 			ob_start();
 			?>
-			<a href="{{preview_url}}">
+			<a target='{{next_target}}' href="{{preview_url}}">
 			<h1>{{title}}</h1>
 			<img src="{{preview_image}}" />
 			</a>
@@ -90,8 +89,19 @@ function wdc_sc_item($attributes, $content = null, $name='')
 		{
 			ob_start();
 			?>
-			<a href="{{preview_url}}">
+			<a target='{{next_target}}' href="{{preview_url}}">
 			<h1>Layout {{repeater.indexplusone}}</h1>
+			<img src="{{preview_image}}" />
+			</a>
+			<?php
+			$template_html = ob_get_clean();
+		}
+		else if ($template == "default.inlist.id")
+		{
+			ob_start();
+			?>
+			<a target='{{next_target}}' href="{{preview_url}}">
+			<h1>Layout {{id}}</h1>
 			<img src="{{preview_image}}" />
 			</a>
 			<?php
@@ -109,7 +119,7 @@ function wdc_sc_item($attributes, $content = null, $name='')
 		{
 			ob_start();
 			?>
-			<a href="{{preview_url}}">
+			<a target='{{next_target}}' href="{{preview_url}}">
 			<img src="{{preview_image}}" />
 			</a>
 			<?php
@@ -119,7 +129,7 @@ function wdc_sc_item($attributes, $content = null, $name='')
 		{
 			ob_start();
 			?>
-			<a href="{{preview_url}}">
+			<a target='{{next_target}}' href="{{preview_url}}">
 			<img src="{{preview_image}}" />
 			</a>
 			<?php
@@ -141,6 +151,8 @@ function wdc_sc_item($attributes, $content = null, $name='')
 		$lookup["preview_url"] = wdc_addqueryparametertourl_v2($lookup["preview_url"], "back_text", $back_text);
 		$lookup["preview_url"] = wdc_addqueryparametertourl_v2($lookup["preview_url"], "back_url", $back_url);
 		
+		$lookup["next_target"] = $attributes["next_target"];
+		
 		if (isset($attributes["lookup"]))
 		{
 			$lookup = array_merge($lookup, $attributes["lookup"]);
@@ -157,14 +169,14 @@ function wdc_sc_item($attributes, $content = null, $name='')
 		$result = $metadata["template_html"];
 		
 		$result = do_shortcode($result);
-		$result = "<div class=\"wdc-item\">" . $result . "</div>";
+		$result = "<div class=\"wdc-item wdc-item-id-{$id}\">" . $result . "</div>";
 	}
 	
 	if (is_user_logged_in())
 	{
 		if (count($warnings) > 0)
 		{
-			$result .= "<div class=\"wdc-errs\">";
+			$result .= "<div class=\"wdc-errs nxs-hidewheneditorinactive\">";
 			foreach ($warnings as $warning)
 			{
 				$result .= "<div class=\"wdc-err\">{$warning}</div>";
@@ -183,9 +195,17 @@ function wdc_sc_items($attributes, $content = null, $name='')
 	
 	$next_text = $attributes["next_text"];
 	$next_url = $attributes["next_url"];
+	$next_target = $attributes["next_target"];
+	
 	$back_text = $attributes["back_text"];
 	
 	$id = $attributes["id"];
+	
+	if ($next_target == "")
+	{
+		$next_target = "_current";
+		$warnings []= "shortcode warning; next_target attribute not specified (use _current or _blank, defaults to _current)";
+	}
 	
 	if ($id == "")
 	{
@@ -204,6 +224,8 @@ function wdc_sc_items($attributes, $content = null, $name='')
 		$warnings[] = "No template attribute specified (example are template=default.inlist, template=default, template=customhtml)";
 	}
 	
+	
+	
 	if ($id != "")
 	{
 		global $wdc_g_modelmanager;
@@ -214,12 +236,13 @@ function wdc_sc_items($attributes, $content = null, $name='')
 			$entirecatalog = $wdc_g_modelmanager->gettaxonomypropertiesofallmodels(array("singularschema" => "nxs.nexusthemes.itemmeta"));
 			foreach ($entirecatalog as $catalogitem)
 			{
-				$itemmeta_ids[] = $catalogitem["nxs.nexusthemes.itemmeta_id"];
+				$itemmeta_ids[] = $catalogitem["nxs.nexusthemes.itemmeta"];
 			}
 		}
 		else
 		{
-			$lookup = $wdc_g_modelmanager->getmodeltaxonomyproperties(array("modeluri" => "{$id}@nxs.nexusthemes.itemmetaidsbybusinesstype"));
+			$modeluri = "{$id}@nxs.nexusthemes.itemmetaidsbybusinesstype";
+			$lookup = $wdc_g_modelmanager->getmodeltaxonomyproperties(array("modeluri" => $modeluri));
 			if ($lookup == null)
 			{
 				$warnings []= "No businesstype found with id $id";
@@ -252,6 +275,7 @@ function wdc_sc_items($attributes, $content = null, $name='')
 					"id" => $id, 
 					"lookup" => array
 					(
+						"id" => $id,
 						"repeater.index" => $repeaterindex, 
 						"repeater.indexplusone" => $repeaterindexplusone
 					),
@@ -259,6 +283,7 @@ function wdc_sc_items($attributes, $content = null, $name='')
 					"next_text" => $next_text,
 					"next_url" => $next_url,
 					"back_text" => $back_text,
+					"next_target" => $next_target,
 				), 
 				null, 
 				""
@@ -294,6 +319,13 @@ function wdc_sc_businesstypes($attributes, $content = null, $name='')
 		$warnings []= "shortcode warning; next_url attribute not specified";
 	}
 	
+	$next_target = $attributes["next_target"];
+	if ($next_target == "")
+	{
+		$next_target = "_current";
+		$warnings []= "shortcode warning; next_target attribute not specified (use _current or _blank, defaults to _current)";
+	}
+	
 	$result = "<div>business types</div>";
 	
 	global $wdc_g_modelmanager;
@@ -311,7 +343,7 @@ function wdc_sc_businesstypes($attributes, $content = null, $name='')
 		
 		$title = $lookup["title"];
 		
-		$result .= "<div class='nxs-wdc-businsstype'><a href='{$next_url}'>{$title}</a></div>";
+		$result .= "<div class='nxs-wdc-businsstype'><a target='{$next_target}' href='{$next_url}'>{$title}</a></div>";
 		
 		if ($n > 5)
 		{
@@ -331,6 +363,10 @@ function wdc_sc_businesstypes($attributes, $content = null, $name='')
 			}
 			$result .= "</div>";
 		}
+	}
+	else
+	{
+		// don't show warning for anonymous users
 	}
 	
 	return $result;
@@ -371,7 +407,7 @@ function wdc_sc_wdc($attributes, $content = null, $name='')
 	{
 		if (count($warnings) > 0)
 		{
-			$result .= "<div class=\"wdc-errs\">";
+			$result .= "<div class=\"wdc-errs nxs-hidewheneditorinactive\">";
 			foreach ($warnings as $warning)
 			{
 				$result .= "<div class=\"wdc-err\">{$warning}</div>";

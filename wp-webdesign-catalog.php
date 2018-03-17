@@ -3,7 +3,7 @@
   Plugin Name: wp-webdesign-catalog
   Plugin URI: http://nexusthemes.com
   Description: wp-webdesign-catalog
-  Version: 1.0.2
+  Version: 1.0.3
   Author: NexusThemes
   Author URI: http://nexusthemes.com
 */
@@ -294,13 +294,44 @@ function wdc_my_plugin_menu()
 }
 add_action( 'admin_menu', 'wdc_my_plugin_menu' );
 
+function wdc_plugin_getfetchschemas()
+{
+	$result = array
+	(
+		// "nxs.divithemes.itemmeta",
+		"nxs.nexusthemes.itemmeta",
+		"nxs.nexusthemes.itemmetaidsbybusinesstype",
+		"nxs.business.businesstype",
+	);
+	return $result;
+}
+
 function wdc_plugin_refetchall()
 {
 	global $wdc_g_modelmanager;
 	$wdc_g_modelmanager->enableretrieval();
-	$wdc_g_modelmanager->cachebulkmodels("nxs.nexusthemes.itemmeta");
-	$wdc_g_modelmanager->cachebulkmodels("nxs.nexusthemes.itemmetaidsbybusinesstype");
-	$wdc_g_modelmanager->cachebulkmodels("nxs.business.businesstype");
+	
+	$part = $_REQUEST["part"];
+	if ($part == "")
+	{
+		$schemas = wdc_plugin_getfetchschemas();
+		foreach ($schemas as $schema)
+		{
+			$wdc_g_modelmanager->cachebulkmodels($schema);
+		}
+	}
+	else
+	{
+		$part = (int) $part;
+		$part--;
+		$schemas = wdc_plugin_getfetchschemas();
+		$schema = $schemas[$part];
+		echo "processing $schema <br />";
+		$wdc_g_modelmanager->cachebulkmodels($schema);
+		echo "part $part retrieved ($schema) <br />";
+		die();
+	}
+	
 	$wdc_g_modelmanager->disableretrieval();
 }
 
@@ -330,9 +361,10 @@ function wdc_plugin_options()
 		
 		function page_tabs( $current = 'first' ) 
 		{
-	    $tabs = array(
-	        'first'   => __( 'Specific Design', 'plugin-textdomain' ), 
-	        'second'  => __( 'Designs by businesstype', 'plugin-textdomain' )
+	    $tabs = array
+	    (
+        'first'   => __( 'Specific Design', 'plugin-textdomain' ), 
+        'second'  => __( 'Designs by businesstype', 'plugin-textdomain'),
 	    );
 	    $html = '<h2 class="nav-tab-wrapper">';
 	    foreach( $tabs as $tab => $name )
@@ -352,18 +384,23 @@ function wdc_plugin_options()
 		<?php page_tabs( $tab ); ?>
 		<?php if ( $tab == 'first' ) 
 		{
+			$id = $_REQUEST["id"];
+			if ($id == "")
+			{
+				$id = 263;
+			}
 			?>
 			<p>
 				At any place in your website you can render a specific design of a website (a list of the available ids can be found <a target='_blank' href='https://nexusthemes.com/webdesigner-catalog/#themeids'>here</a>), like so;<br />
 				<br />
-			  <?php echo do_shortcode("[wdc type=theme id=263 template=thumb-linked next_text='Next' next_url='{$next_url}' back_text='Back']"); ?>
+			  <?php echo do_shortcode("[wdc type=theme id={$id} template=thumb-linked next_text='Next' next_url='{$next_url}' back_text='Back']"); ?>
 			  <br />
 				Use the following shortcode to render a single design:<br />
 				<br />
 			  
 			  <textarea style="min-width: 50vw; min-height: 150px;" class="js-copytextarea2">
 			  	
-	[wdc type=theme id=263 template=thumb-linked next_text='Next' next_url='<?php echo $next_url; ?>' back_text='Back']	
+	[wdc type=theme id=<?php echo $id; ?> template=thumb-linked next_text='Next' next_url='<?php echo $next_url; ?>' back_text='Back']	
 			  </textarea> 
 			  <br />
 			  <br />
@@ -372,7 +409,7 @@ function wdc_plugin_options()
 			  <script>
 			  	//
 			  	var copyTextareaBtn = document.querySelector('.js-textareacopybtn2');
-					copyTextareaBtn2.addEventListener('click', function(event) {
+					copyTextareaBtn.addEventListener('click', function(event) {
 					  var copyTextarea = document.querySelector('.js-copytextarea2');
 					  copyTextarea.select();
 					  try {
@@ -384,31 +421,79 @@ function wdc_plugin_options()
 					  }
 					});
 					//
-			  </script>  
+			  </script>
+			  <br />
+			  <h2 id='ids'>Available IDs</h2>
+			  <div style='display: flex; flex-direction: column; '>
+			  <?php
+				global $wdc_g_modelmanager;
+				$items = $wdc_g_modelmanager->gettaxonomypropertiesofallmodels(array("singularschema" => "nxs.nexusthemes.itemmeta"));
+				foreach ($items as $item)
+				{
+					$id = $item["nxs.nexusthemes.itemmeta_id"];
+					$preview_url = $item["preview_url"];
+					$title = $item["title"];
+					$order_base = $title;
+					$order_base = strtolower($order_base);
+					$order_base = substr($order_base, 0, 3);
+					$alphabet = range('a', 'z');
+					$order = 0;
+					$max_orders_chars = 3;
+					$explanation = "";
+					for ($order_base_index = 0; $order_base_index < $max_orders_chars; $order_base_index++)
+					{
+						$char = $order_base[$order_base_index];
+						$charorder = array_search($char, $alphabet);
+						$powerof = ($max_orders_chars - $order_base_index);
+						$value = $charorder * (26 ** $powerof);
+						$order += $value;
+					}
+					$url = wdc_geturlcurrentpage();
+					$url = wdc_addqueryparametertourl_v2($url, "id", $id, true, true);
+					?>
+					<div style='order: <?php echo $order; ?>; padding: 2px;'>
+						<a href='<?php echo $preview_url; ?>' target='_blank'>
+							<div alt="f319" class="dashicons dashicons-admin-site"></div>
+						</a>
+						&nbsp;
+						<a href='<?php echo $url; ?>' target='_blank'>
+							<?php echo $title; ?> - <?php echo $id; ?>
+						</a>
+					</div>
+					<?php
+				}
+			  ?>
+				</div>
 			</p>
 		<?php 
 		} else if ( $tab == 'second' ) 
 		{
+			$id = $_REQUEST["id"];
+			if ($id == "")
+			{
+				$id = 631;
+			}
+			
 			?>
 			<p>
 				At any place in your site you can render a list of designs within a specific businesstype (for a list of the valid ids, see <a target='_blank' href='https://nexusthemes.com/webdesigner-catalog/#businesstypeids'>here</a>)<br />
 				<br />
-				<?php echo do_shortcode("[wdc_items id=631 next_text='Next' next_url='{$next_url}' back_text='Back' template='default.inlist']"); ?>
+				<?php echo do_shortcode("[wdc_items id={$id} next_text='Next' next_url='{$next_url}' back_text='Back' template='default.inlist']"); ?>
 				 <br />
 				Use the following shortcode to render:<br />
 				<br />
 			  <textarea style="min-width: 50vw; min-height: 150px;" class="js-copytextarea1">
 			  	
-	[wdc_items id="631" next_text="Next" next_url="<?php echo $next_url; ?>" back_text="Back" template="default.inlist"]	
+	[wdc_items id="<?php echo $id; ?>" next_text="Next" next_url="<?php echo $next_url; ?>" back_text="Back" template="default.inlist"]	
 			  </textarea> 
 			  <br />
 			  <br />
 			  <button class="js-textareacopybtn1" style="vertical-align:top;">Copy To Clipboard</button><br />
-			  <br />
+			 
 			  <script>
 			  	//
 			  	var copyTextareaBtn = document.querySelector('.js-textareacopybtn1');
-					copyTextareaBtn1.addEventListener('click', function(event) {
+					copyTextareaBtn.addEventListener('click', function(event) {
 					  var copyTextarea = document.querySelector('.js-copytextarea1');
 					  copyTextarea.select();
 					  try {
@@ -422,6 +507,46 @@ function wdc_plugin_options()
 					//
 			  </script>
 			  
+			  <h2 id='ids'>Available IDs</h2>
+			  <div style='display: flex; flex-direction: column; '>
+			  <?php
+				global $wdc_g_modelmanager;
+				$items = $wdc_g_modelmanager->gettaxonomypropertiesofallmodels(array("singularschema" => "nxs.business.businesstype"));
+				foreach ($items as $item)
+				{
+					$id = $item["nxs.business.businesstype_id"];
+					// $preview_url = $item["preview_url"];
+					$title = $item["title_en"];
+					$order_base = $title;
+					$order_base = strtolower($order_base);
+					$order_base = substr($order_base, 0, 3);
+					$alphabet = range('a', 'z');
+					$order = 0;
+					$max_orders_chars = 3;
+					$explanation = "";
+					for ($order_base_index = 0; $order_base_index < $max_orders_chars; $order_base_index++)
+					{
+						$char = $order_base[$order_base_index];
+						$charorder = array_search($char, $alphabet);
+						$powerof = ($max_orders_chars - $order_base_index);
+						$value = $charorder * (26 ** $powerof);
+						$order += $value;
+					}
+					$url = wdc_geturlcurrentpage();
+					$url = wdc_addqueryparametertourl_v2($url, "id", $id, true, true);
+					?>
+					<div style='order: <?php echo $order; ?>'>
+						<a href='<?php echo $url; ?>'>
+							<?php echo $title; ?> - <?php echo $id; ?>
+						</a>
+					</div>
+					<?php
+				}
+			  ?>
+			  </div>
+			  
+			  <br />
+			  
 			  <!-- -->
 			  
 			  <br />
@@ -431,6 +556,7 @@ function wdc_plugin_options()
 			</p>
 			<?php
 		}
+		
 	}
 	
 	echo "</div>";
