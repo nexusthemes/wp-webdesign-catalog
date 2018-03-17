@@ -1117,14 +1117,14 @@ class wdc_g_modelmanager
 			$result = $this->getmodel_actual($modeluri);
 			
 			// update cache
-			$cacheduration = 60 * 60 * 24 * 30; // 30 days cache
+			$cacheduration = 0;	// forever
 
 			if (isset($result["cachedurationinsecs"]))
 			{
 				$cacheduration = $result["cachedurationinsecs"];
 				if ($cacheduration == 0)
 				{
-					$cacheduration = 60 * 60 * 24 * 30; // 30 days cache
+					$cacheduration = 0;	// forever, 60 * 60 * 24 * 30; // 30 days cache
 				}
 			}
 			
