@@ -236,7 +236,7 @@ function wdc_sc_items($attributes, $content = null, $name='')
 			$entirecatalog = $wdc_g_modelmanager->gettaxonomypropertiesofallmodels(array("singularschema" => "nxs.nexusthemes.itemmeta"));
 			foreach ($entirecatalog as $catalogitem)
 			{
-				$itemmeta_ids[] = $catalogitem["nxs.nexusthemes.itemmeta"];
+				$itemmeta_ids[] = $catalogitem["nxs.nexusthemes.itemmeta_id"];
 			}
 		}
 		else

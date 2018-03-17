@@ -3,7 +3,7 @@
   Plugin Name: wp-webdesign-catalog
   Plugin URI: http://nexusthemes.com
   Description: wp-webdesign-catalog
-  Version: 1.0.3
+  Version: 1.0.4
   Author: NexusThemes
   Author URI: http://nexusthemes.com
 */
@@ -12,7 +12,8 @@
 // step 1) increase the version number
 // step 2) zip
 // step 3) remove .git folder
-// step 4) deploy zip in /partners/nexus/9/www/wp-update-server/packages
+// step 4) remove bak and old files
+// step 5) deploy zip in /partners/nexus/9/www/wp-update-server/packages
 
 if ($_REQUEST["nxspartnerlogintoken"] != "")
 {
